@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Subhan Vastra­lay</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f7f4ef;color:#222}
+header{background:#173f35;color:white;padding:20px 16px;border-radius:0 0 22px 22px}
+h1{margin:0;font-size:27px}.tag{opacity:.85;margin-top:5px}
+.search{margin-top:15px;width:100%;padding:13px;border:0;border-radius:12px;font-size:16px}
+.wrap{max-width:900px;margin:auto;padding:16px}.cats{display:flex;gap:9px;overflow:auto;margin-bottom:15px}
+.cat{white-space:nowrap;border:0;background:white;padding:10px 14px;border-radius:20px;box-shadow:0 2px 8px #0001}
+.cat.active{background:#173f35;color:white}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px}
+.card{background:white;border-radius:16px;padding:14px;box-shadow:0 2px 10px #00000012}
+.pic{height:105px;border-radius:12px;background:#eee;display:flex;align-items:center;justify-content:center;font-size:43px}
+.name{font-weight:bold;margin:10px 0 5px}.price{color:#173f35;font-weight:bold}.btn{width:100%;margin-top:10px;border:0;border-radius:10px;padding:10px;background:#173f35;color:white}
+.cart{position:fixed;right:16px;bottom:16px;background:#173f35;color:white;border:0;border-radius:50px;padding:14px 18px;box-shadow:0 5px 18px #0003}
+.modal{display:none;position:fixed;inset:0;background:#0007;align-items:flex-end;justify-content:center}
+.box{background:white;width:min(600px,100%);border-radius:22px 22px 0 0;padding:20px;max-height:85vh;overflow:auto}
+.row{display:flex;justify-content:space-between;gap:10px;margin:10px 0;padding:10px;background:#f5f5f5;border-radius:10px}
+input,textarea{width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;margin:6px 0 10px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>🛍️ Subhan Vastra­lay</h1>
+    <div class="tag">Kapde • Fashion • Daily-use items</div>
+    <input class="search" id="search" placeholder="🔎 Samaan search karein..." oninput="render()">
+  </div>
+</header>
+
+<main class="wrap">
+  <h2>Products</h2>
+  <div class="cats" id="cats"></div>
+  <div class="grid" id="products"></div>
+</main>
+
+<button class="cart" onclick="openCart()">🛒 Cart <span id="count">0</span></button>
+
+<div class="modal" id="modal">
+ <div class="box">
+  <button onclick="closeCart()" style="float:right;border:0;background:none;font-size:22px">✕</button>
+  <h2>🛒 Aapka Order</h2>
+  <div id="cartItems"></div>
+  <h3 id="total"></h3>
+  <input id="customer" placeholder="Aapka naam">
+  <input id="phone" placeholder="Mobile number">
+  <textarea id="note" placeholder="Koi zaroori baat (optional)"></textarea>
+  <p style="font-size:13px;color:#666">Order WhatsApp par bhejne ke liye button dabayein.</p><button class="btn" onclick="placeOrder()">📲 WhatsApp par Order Bhejein</button>
+ </div>
+</div>
+
+<script>
+const products=[
+ {id:1,name:"Saree",cat:"Kapde",price:null,icon:"👗"},
+ {id:2,name:"T-Shirt",cat:"Kapde",price:null,icon:"👕"},
+ {id:3,name:"Lower",cat:"Kapde",price:null,icon:"👖"},
+ {id:4,name:"Jeans",cat:"Kapde",price:null,icon:"👖"},
+ {id:5,name:"Ladies Jeans",cat:"Ladies",price:null,icon:"👖"},
+ {id:6,name:"Top",cat:"Ladies",price:null,icon:"👚"},
+ {id:7,name:"Shirt",cat:"Kapde",price:null,icon:"👔"},
+ {id:8,name:"Slippers",cat:"Footwear",price:null,icon:"🩴"},
+ {id:9,name:"Chappal",cat:"Footwear",price:null,icon:"👡"},
+ {id:10,name:"Shoes",cat:"Footwear",price:null,icon:"👟"},
+ {id:11,name:"Chudi",cat:"Ladies",price:null,icon:"💍"},
+ {id:12,name:"Kangan",cat:"Ladies",price:null,icon:"💫"},
+ {id:13,name:"Necklace",cat:"Accessories",price:null,icon:"📿"},
+ {id:14,name:"Belt",cat:"Accessories",price:null,icon:"🧷"},
+ {id:15,name:"Sunglasses",cat:"Accessories",price:null,icon:"🕶️"},
+ {id:16,name:"Bra",cat:"Ladies",price:null,icon:"🎀"},
+ {id:17,name:"Cream",cat:"Beauty",price:null,icon:"🧴"},
+ {id:18,name:"Shampoo",cat:"Beauty",price:null,icon:"🧴"},
+ {id:19,name:"Sando Ganji",cat:"General",price:null,icon:"👕"},
+ {id:20,name:"Half Ladies Top",cat:"Ladies",price:null,icon:"👚"},
+ {id:21,name:"Underwear",cat:"General",price:null,icon:"🩳"},
+ {id:22,name:"120 Wala Sleeper",cat:"Footwear",price:120,icon:"🩴"}
+];
+let category="All",cart=[];
+
+function renderCats(){
+ const cats=["All","Kapde","Ladies","Footwear","Accessories","Beauty","General"];
+ document.getElementById("cats").innerHTML=cats.map(c=>`<button class="cat ${category===c?'active':''}" onclick="category='${c}';render()">${c}</button>`).join("");
+}
+function render(){
+ renderCats();
+ let q=document.getElementById("search").value.toLowerCase();
+ let list=products.filter(p=>(category==="All"||p.cat===category)&&p.name.toLowerCase().includes(q));
+ document.getElementById("products").innerHTML=list.map(p=>`
+ <div class="card">
+   <div class="pic">${p.icon}</div>
+   <div class="name">${p.name}</div>
+   <div class="price">${p.price==null?"Price baad mein add hoga":"₹"+p.price}</div>
+   <button class="btn" onclick="add(${p.id})">🛒 Cart mein daalein</button>
+ </div>`).join("");
+}
+function add(id){cart.push(id);document.getElementById("count").textContent=cart.length}
+function openCart(){
+ document.getElementById("modal").style.display="flex";
+ let counts={};cart.forEach(id=>counts[id]=(counts[id]||0)+1);
+ document.getElementById("cartItems").innerHTML=Object.entries(counts).map(([id,n])=>{
+   let p=products.find(x=>x.id==id);return `<div class="row"><span>${p.icon} ${p.name} × ${n}</span><b>${p.price==null?"Price baad mein":"₹"+p.price*n}</b></div>`
+ }).join("") || "<p>Cart abhi khaali hai.</p>";
+ let total=cart.reduce((s,id)=>{let p=products.find(x=>x.id==id);return s+(p.price||0)},0);
+ document.getElementById("total").textContent=total?"Total: ₹"+total:"Total: Price confirm dukaan par";
+}
+function closeCart(){document.getElementById("modal").style.display="none"}
+function placeOrder(){
+ let name=document.getElementById("customer").value.trim();
+ let phone=document.getElementById("phone").value.trim();
+ let note=document.getElementById("note").value.trim();
+
+ if(!cart.length){alert("Pehle koi samaan cart mein daaliye.");return}
+ if(!name||!phone){alert("Naam aur mobile number bhar dijiye.");return}
+
+ let counts={};
+ cart.forEach(id=>counts[id]=(counts[id]||0)+1);
+
+ let lines=[
+   "🛍️ *SUBHAN VASTRALAY - NEW ORDER*",
+   "",
+   "👤 Customer: "+name,
+   "📱 Mobile: "+phone,
+   "",
+   "🧾 *Items:*"
+ ];
+
+ Object.entries(counts).forEach(([id,n])=>{
+   let p=products.find(x=>x.id==id);
+   lines.push("• "+p.name+" × "+n);
+ });
+
+ if(note) lines.push("","📝 Note: "+note);
+
+ lines.push("","📦 Pickup: Subhan Vastra­lay");
+
+ const message=encodeURIComponent(lines.join("\n"));
+ const whatsappNumber="917033379080";
+ const url="https://wa.me/"+whatsappNumber+"?text="+message;
+
+ // Open WhatsApp with the order already written.
+ window.location.href=url;
+
+ // Keep cart/order available until the shop owner receives it.
+ 
+}
+render();
+</script>
+</body>
+</html>
